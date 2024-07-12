@@ -18,7 +18,10 @@ jobs:
     env:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
     container:
-      image: returntocorp/semgrep
+      image: python:3.8
     steps:
-    - uses: actions/checkout@v3
-    - run: semgrep ci
+    - uses: actions/checkout@v4
+    - run: |
+        python -m pip install --upgrade pip
+        pip install semgrep
+        semgrep ci --supply-chain
