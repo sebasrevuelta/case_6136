@@ -1,3 +1,5 @@
+name: Semgrep SCA Scan on Dispatch
+
 on:
   workflow_dispatch: {}
   pull_request: {}
@@ -7,25 +9,34 @@ on:
     - master
     paths:
     - .github/workflows/semgrep.yml
-  schedule:
-  # random HH:MM to avoid a load spike on GitHub Actions at 00:00
-  - cron: 58 17 * * *
-name: Semgrep
+
 jobs:
-  semgrep:
-    name: semgrep/ci
+  semgrep-sca-maven:
+    continue-on-error: true
     runs-on: ubuntu-20.04
-    env:
-      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-    #container:
-    #  image: semgrep/semgrep
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ '8', '11', '17', '21' ]
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.12
-    - run: |
-        python3 -m pip install --upgrade pip
-        pip3 install semgrep
-        semgrep ci --supply-chain
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Semgrep SCA Maven
+        run: |
+          python -m pip install --upgrade pip
+          pip install semgrep
+          semgrep ci --supply-chain
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
